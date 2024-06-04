@@ -1,54 +1,112 @@
-
 pipeline {
     agent any
-    
+
     environment {
-        DIRECTORY_PATH = "/path/to/code"
-        TESTING_ENVIRONMENT = "testing_environment_name"
-        PRODUCTION_ENVIRONMENT = "dileka"
+        // Define environment variables if needed
+        EMAIL_RECIPIENT = 's223839552@deakin.edu.au'
     }
-    
+
     stages {
         stage('Build') {
             steps {
-                echo "Fetching the source code from the directory path specified by the environment variable: \${env.DIRECTORY_PATH}"
-                echo "Compiling the code and generating any necessary artifacts"
-                // Add build steps here if needed
-            }
-        }
-        
-        stage('Test') {
-            steps {
-                echo "Running unit tests"
-                echo "Running integration tests"
-            }
-        }
-        
-        stage('Code Quality Check') {
-            steps {
-                echo "Checking the quality of the code"
-            }
-        }
-        
-        stage('Deploy') {
-            steps {
-                echo "Deploying the application to a testing environment specified by the environment variable: \${env.TESTING_ENVIRONMENT}"
-            }
-        }
-        
-        stage('Approval') {
-            steps {
+                echo 'Building the application...'
                 script {
-                    echo "Waiting for manual approval..."
-                    sleep 10
+                    // Use Maven to build the application
+                    sh 'mvn clean package'
                 }
             }
         }
-        
+
+        stage('Unit and Integration Tests') {
+            steps {
+                echo 'Running unit and integration tests...'
+                script {
+                    // Use Maven to run tests
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    // Send email notification with the test results
+                    emailext (
+                        to: "${EMAIL_RECIPIENT}",
+                        subject: "Unit and Integration Tests - ${currentBuild.currentResult}",
+                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
+                        Please see the attached logs for more details.""",
+                        attachLog: true
+                    )
+                }
+            }
+        }
+
+        stage('Code Analysis') {
+            steps {
+                echo 'Performing code analysis...'
+                script {
+                    // Run SonarQube analysis
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                echo 'Performing security scan...'
+                script {
+                    // Run OWASP Dependency-Check
+                    sh 'mvn dependency-check:check'
+                }
+            }
+            post {
+                always {
+                    // Send email notification with the security scan results
+                    emailext (
+                        to: "${EMAIL_RECIPIENT}",
+                        subject: "Security Scan - ${currentBuild.currentResult}",
+                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
+                        Please see the attached logs for more details.""",
+                        attachLog: true
+                    )
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                echo 'Deploying to staging...'
+                script {
+                    // Deploy to AWS staging environment
+                    sh 'aws deploy create-deployment --application-name MyApp --deployment-group-name MyStagingGroup --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip'
+                }
+            }
+        }
+
+        stage('Integration Tests on Staging') {
+            steps {
+                echo 'Running integration tests on staging...'
+                script {
+                    // Run Selenium tests
+                    sh 'mvn verify -P selenium'
+                }
+            }
+        }
+
         stage('Deploy to Production') {
             steps {
-                echo "Deploying the code to the production environment (\${env.PRODUCTION_ENVIRONMENT})"
+                echo 'Deploying to production...'
+                script {
+                    // Deploy to AWS production environment
+                    sh 'aws deploy create-deployment --application-name MyApp --deployment-group-name MyProductionGroup --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip'
+                }
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
         }
     }
 }
