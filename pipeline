@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Define environment variables if needed
-        EMAIL_RECIPIENT = 's223839552@deakin.edu.au'
+        EMAIL_RECIPIENT = 'dileka.thilakarathna1@gmail.com'
     }
 
     stages {
@@ -110,4 +110,5 @@ pipeline {
         }
     }
 }
+
 
