@@ -25,7 +25,7 @@ pipeline {
             post {
                 always {
                     // Archive the logs to ensure they can be attached
-                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+                    archiveArtifacts artifacts: '**/target/*.log', allowEmptyArchive: true
                     // Send email notification with the test results
                     emailext (
                         to: "${EMAIL_RECIPIENT}",
@@ -45,13 +45,38 @@ pipeline {
             post {
                 always {
                     // Archive the logs to ensure they can be attached
-                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+                    archiveArtifacts artifacts: '**/target/*.log', allowEmptyArchive: true
                     // Send email notification with the code quality check results
                     emailext (
                         to: "${EMAIL_RECIPIENT}",
                         subject: "Code Quality Check Stage - ${currentBuild.currentResult}",
                         body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
                         Please see the attached logs for more details.""",
+                        attachLog: true
+                    )
+                }
+            }
+        }
+        
+        stage('Security Scan') {
+            steps {
+                echo "Performing security scan using OWASP Dependency-Check..."
+                script {
+                    // Run OWASP Dependency-Check
+                    sh 'dependency-check.sh --project MyApp --scan ${env.DIRECTORY_PATH} --format HTML --out dependency-check-report.html'
+                }
+            }
+            post {
+                always {
+                    // Archive the security scan report to ensure it can be attached
+                    archiveArtifacts artifacts: 'dependency-check-report.html', allowEmptyArchive: true
+                    // Send email notification with the security scan results
+                    emailext (
+                        to: "${EMAIL_RECIPIENT}",
+                        subject: "Security Scan Stage - ${currentBuild.currentResult}",
+                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
+                        Please see the attached security scan report for more details.""",
+                        attachmentsPattern: 'dependency-check-report.html',
                         attachLog: true
                     )
                 }
