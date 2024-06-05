@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Define environment variables if needed
         EMAIL_RECIPIENT = 'dileka.thilakarathna1@gmail.com'
     }
 
@@ -56,7 +55,7 @@ pipeline {
                 echo 'Performing security scan...'
                 script {
                     // Run OWASP Dependency-Check
-                    sh 'mvn dependency-check:check'
+                    sh 'mvn org.owasp:dependency-check-maven:check'
                 }
             }
             post {
@@ -77,8 +76,13 @@ pipeline {
             steps {
                 echo 'Deploying to staging...'
                 script {
-                    // Deploy to AWS staging environment
-                    sh 'aws deploy create-deployment --application-name MyApp --deployment-group-name MyStagingGroup --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip'
+                    // Deploy to AWS staging environment using AWS CLI
+                    sh '''
+                    aws deploy create-deployment \
+                        --application-name MyApp \
+                        --deployment-group-name MyStagingGroup \
+                        --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip
+                    '''
                 }
             }
         }
@@ -97,8 +101,13 @@ pipeline {
             steps {
                 echo 'Deploying to production...'
                 script {
-                    // Deploy to AWS production environment
-                    sh 'aws deploy create-deployment --application-name MyApp --deployment-group-name MyProductionGroup --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip'
+                    // Deploy to AWS production environment using AWS CLI
+                    sh '''
+                    aws deploy create-deployment \
+                        --application-name MyApp \
+                        --deployment-group-name MyProductionGroup \
+                        --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip
+                    '''
                 }
             }
         }
@@ -110,5 +119,3 @@ pipeline {
         }
     }
 }
-
-
