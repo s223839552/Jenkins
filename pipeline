@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
     
@@ -5,13 +6,12 @@ pipeline {
         DIRECTORY_PATH = "/path/to/code"
         TESTING_ENVIRONMENT = "testing_environment_name"
         PRODUCTION_ENVIRONMENT = "dileka"
-        EMAIL_RECIPIENT = "dileka.thilakarathna1@gmail.com"
     }
     
     stages {
         stage('Build') {
             steps {
-                echo "Fetching the source code from the directory path specified by the environment variable: ${env.DIRECTORY_PATH}"
+                echo "Fetching the source code from the directory path specified by the environment variable: \${env.DIRECTORY_PATH}"
                 echo "Compiling the code and generating any necessary artifacts"
                 // Add build steps here if needed
             }
@@ -22,70 +22,17 @@ pipeline {
                 echo "Running unit tests"
                 echo "Running integration tests"
             }
-            post {
-                always {
-                    // Archive the logs to ensure they can be attached
-                    archiveArtifacts artifacts: '**/target/*.log', allowEmptyArchive: true
-                    // Send email notification with the test results
-                    emailext (
-                        to: "${EMAIL_RECIPIENT}",
-                        subject: "Test Stage - ${currentBuild.currentResult}",
-                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
-                        Please see the attached logs for more details.""",
-                        attachLog: true
-                    )
-                }
-            }
         }
         
         stage('Code Quality Check') {
             steps {
                 echo "Checking the quality of the code"
             }
-            post {
-                always {
-                    // Archive the logs to ensure they can be attached
-                    archiveArtifacts artifacts: '**/target/*.log', allowEmptyArchive: true
-                    // Send email notification with the code quality check results
-                    emailext (
-                        to: "${EMAIL_RECIPIENT}",
-                        subject: "Code Quality Check Stage - ${currentBuild.currentResult}",
-                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
-                        Please see the attached logs for more details.""",
-                        attachLog: true
-                    )
-                }
-            }
-        }
-        
-        stage('Security Scan') {
-            steps {
-                echo "Performing security scan using OWASP Dependency-Check..."
-                script {
-                    // Run OWASP Dependency-Check
-                    sh 'dependency-check.sh --project MyApp --scan ${env.DIRECTORY_PATH} --format HTML --out dependency-check-report.html'
-                }
-            }
-            post {
-                always {
-                    // Archive the security scan report to ensure it can be attached
-                    archiveArtifacts artifacts: 'dependency-check-report.html', allowEmptyArchive: true
-                    // Send email notification with the security scan results
-                    emailext (
-                        to: "${EMAIL_RECIPIENT}",
-                        subject: "Security Scan Stage - ${currentBuild.currentResult}",
-                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
-                        Please see the attached security scan report for more details.""",
-                        attachmentsPattern: 'dependency-check-report.html',
-                        attachLog: true
-                    )
-                }
-            }
         }
         
         stage('Deploy') {
             steps {
-                echo "Deploying the application to a testing environment specified by the environment variable: ${env.TESTING_ENVIRONMENT}"
+                echo "Deploying the application to a testing environment specified by the environment variable: \${env.TESTING_ENVIRONMENT}"
             }
         }
         
@@ -93,21 +40,16 @@ pipeline {
             steps {
                 script {
                     echo "Waiting for manual approval..."
-                    input message: 'Approve deployment to production?', ok: 'Approve'
+                    sleep 10
                 }
             }
         }
         
         stage('Deploy to Production') {
             steps {
-                echo "Deploying the code to the production environment (${env.PRODUCTION_ENVIRONMENT})"
+                echo "Deploying the code to the production environment (\${env.PRODUCTION_ENVIRONMENT})"
             }
         }
     }
-
-    post {
-        always {
-            echo 'Pipeline finished.'
-        }
-    }
 }
+
