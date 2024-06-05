@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        STAGING_SERVER = server1
-        PRODUCTION_SERVER = server2
+        STAGING_SERVER = 'server1'
+        PRODUCTION_SERVER = 'server2'
         RECIPIENTS = 'dileka.thilakarathna1@gmail.com'
     }
 
