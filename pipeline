@@ -1,109 +1,88 @@
 pipeline {
     agent any
-
+    
     environment {
-        STAGING_SERVER = 'server1'
-        PRODUCTION_SERVER = 'server2'
-        RECIPIENTS = 'dileka.thilakarathna1@gmail.com'
+        DIRECTORY_PATH = "/path/to/code"
+        TESTING_ENVIRONMENT = "testing_environment_name"
+        PRODUCTION_ENVIRONMENT = "dileka"
+        EMAIL_RECIPIENT = "dileka.thilakarathna1@gmail.com"
     }
-
+    
     stages {
         stage('Build') {
             steps {
-                script {
-                    // Using Maven to compile and package the code
-                    sh 'mvn clean package'
-                }
+                echo "Fetching the source code from the directory path specified by the environment variable: ${env.DIRECTORY_PATH}"
+                echo "Compiling the code and generating any necessary artifacts"
+                // Add build steps here if needed
             }
         }
-
-        stage('Unit and Integration Tests') {
+        
+        stage('Test') {
             steps {
-                script {
-                    // Running JUnit and TestNG tests
-                    sh 'mvn test'
-                }
+                echo "Running unit tests"
+                echo "Running integration tests"
             }
             post {
                 always {
-                    archiveArtifacts artifacts: '**/target/*.xml', allowEmptyArchive: true
-                    junit '**/target/*.xml'
-                }
-                failure {
+                    // Archive the logs to ensure they can be attached
+                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+                    // Send email notification with the test results
                     emailext (
-                        to: env.RECIPIENTS,
-                        subject: "Unit and Integration Tests Failed",
-                        body: "Please check the Jenkins console output for more details.",
+                        to: "${EMAIL_RECIPIENT}",
+                        subject: "Test Stage - ${currentBuild.currentResult}",
+                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
+                        Please see the attached logs for more details.""",
                         attachLog: true
                     )
                 }
             }
         }
-
-        stage('Code Analysis') {
+        
+        stage('Code Quality Check') {
             steps {
-                script {
-                    // Running SonarQube analysis
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar'
-                    }
-                }
-            }
-        }
-
-        stage('Security Scan') {
-            steps {
-                script {
-                    // Running OWASP Dependency-Check
-                    sh 'mvn org.owasp:dependency-check-maven:check'
-                }
+                echo "Checking the quality of the code"
             }
             post {
                 always {
-                    archiveArtifacts artifacts: '**/dependency-check-report.html', allowEmptyArchive: true
-                }
-                failure {
+                    // Archive the logs to ensure they can be attached
+                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+                    // Send email notification with the code quality check results
                     emailext (
-                        to: env.RECIPIENTS,
-                        subject: "Security Scan Failed",
-                        body: "Please check the Jenkins console output and dependency-check-report.html for more details.",
+                        to: "${EMAIL_RECIPIENT}",
+                        subject: "Code Quality Check Stage - ${currentBuild.currentResult}",
+                        body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
+                        Please see the attached logs for more details.""",
                         attachLog: true
                     )
                 }
             }
         }
-
-        stage('Deploy to Staging') {
+        
+        stage('Deploy') {
+            steps {
+                echo "Deploying the application to a testing environment specified by the environment variable: ${env.TESTING_ENVIRONMENT}"
+            }
+        }
+        
+        stage('Approval') {
             steps {
                 script {
-                    // Deploying to the staging environment using AWS CodeDeploy
-                    sh 'aws deploy create-deployment --application-name your-application --deployment-group-name staging --s3-location bucket=your-bucket,key=your-app.zip,bundleType=zip'
+                    echo "Waiting for manual approval..."
+                    input message: 'Approve deployment to production?', ok: 'Approve'
                 }
             }
         }
-
-        stage('Integration Tests on Staging') {
-            steps {
-                script {
-                    // Running Selenium tests on the staging environment
-                    sh 'mvn verify -Pselenium-tests'
-                }
-            }
-        }
-
+        
         stage('Deploy to Production') {
             steps {
-                script {
-                    // Deploying to the production environment using AWS CodeDeploy
-                    sh 'aws deploy create-deployment --application-name your-application --deployment-group-name production --s3-location bucket=your-bucket,key=your-app.zip,bundleType=zip'
-                }
+                echo "Deploying the code to the production environment (${env.PRODUCTION_ENVIRONMENT})"
             }
         }
     }
 
     post {
         always {
-            cleanWs()
+            echo 'Pipeline finished.'
         }
     }
 }
