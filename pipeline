@@ -1,35 +1,33 @@
 pipeline {
     agent any
-
+    
     environment {
-        EMAIL_RECIPIENT = 'dileka.thilakarathna1@gmail.com'
+        DIRECTORY_PATH = "/path/to/code"
+        TESTING_ENVIRONMENT = "testing_environment_name"
+        PRODUCTION_ENVIRONMENT = "dileka"
+        EMAIL_RECIPIENT = "dileka.thilakarathna1@gmail.com"
     }
-
+    
     stages {
         stage('Build') {
             steps {
-                echo 'Building the application...'
-                script {
-                    // Build the application using a custom build script or command
-                    sh './build.sh'
-                }
+                echo "Fetching the source code from the directory path specified by the environment variable: \${env.DIRECTORY_PATH}"
+                echo "Compiling the code and generating any necessary artifacts"
+                // Add build steps here if needed
             }
         }
-
-        stage('Unit and Integration Tests') {
+        
+        stage('Test') {
             steps {
-                echo 'Running unit and integration tests...'
-                script {
-                    // Run unit and integration tests using a custom test script or command
-                    sh './run_tests.sh'
-                }
+                echo "Running unit tests"
+                echo "Running integration tests"
             }
             post {
                 always {
                     // Send email notification with the test results
                     emailext (
                         to: "${EMAIL_RECIPIENT}",
-                        subject: "Unit and Integration Tests - ${currentBuild.currentResult}",
+                        subject: "Test Stage - ${currentBuild.currentResult}",
                         body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
                         Please see the attached logs for more details.""",
                         attachLog: true
@@ -37,33 +35,17 @@ pipeline {
                 }
             }
         }
-
-        stage('Code Analysis') {
+        
+        stage('Code Quality Check') {
             steps {
-                echo 'Performing code analysis...'
-                script {
-                    // Run code analysis using a custom script or tool
-                    // Example: Run ESLint for a JavaScript project
-                    sh './run_code_analysis.sh'
-                }
-            }
-        }
-
-        stage('Security Scan') {
-            steps {
-                echo 'Performing security scan...'
-                script {
-                    // Run security scan using a custom script or tool
-                    // Example: Run a security scan with a tool like OWASP ZAP
-                    sh './run_security_scan.sh'
-                }
+                echo "Checking the quality of the code"
             }
             post {
                 always {
-                    // Send email notification with the security scan results
+                    // Send email notification with the code quality check results
                     emailext (
                         to: "${EMAIL_RECIPIENT}",
-                        subject: "Security Scan - ${currentBuild.currentResult}",
+                        subject: "Code Quality Check Stage - ${currentBuild.currentResult}",
                         body: """Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}
                         Please see the attached logs for more details.""",
                         attachLog: true
@@ -71,45 +53,25 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy to Staging') {
+        
+        stage('Deploy') {
             steps {
-                echo 'Deploying to staging...'
+                echo "Deploying the application to a testing environment specified by the environment variable: \${env.TESTING_ENVIRONMENT}"
+            }
+        }
+        
+        stage('Approval') {
+            steps {
                 script {
-                    // Deploy to AWS staging environment using AWS CLI
-                    sh '''
-                    aws deploy create-deployment \
-                        --application-name MyApp \
-                        --deployment-group-name MyStagingGroup \
-                        --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip
-                    '''
+                    echo "Waiting for manual approval..."
+                    input message: 'Approve deployment to production?', ok: 'Approve'
                 }
             }
         }
-
-        stage('Integration Tests on Staging') {
-            steps {
-                echo 'Running integration tests on staging...'
-                script {
-                    // Run integration tests using a custom script or tool
-                    // Example: Run Selenium tests
-                    sh './run_integration_tests.sh'
-                }
-            }
-        }
-
+        
         stage('Deploy to Production') {
             steps {
-                echo 'Deploying to production...'
-                script {
-                    // Deploy to AWS production environment using AWS CLI
-                    sh '''
-                    aws deploy create-deployment \
-                        --application-name MyApp \
-                        --deployment-group-name MyProductionGroup \
-                        --s3-location bucket=my-bucket,key=my-app.zip,bundleType=zip
-                    '''
-                }
+                echo "Deploying the code to the production environment (\${env.PRODUCTION_ENVIRONMENT})"
             }
         }
     }
