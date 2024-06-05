@@ -4,7 +4,7 @@ pipeline {
     environment {
         STAGING_SERVER = server1
         PRODUCTION_SERVER = server2
-        RECIPIENTS = dileka.thilakarathna1@gmail.com
+        RECIPIENTS = 'dileka.thilakarathna1@gmail.com'
     }
 
     stages {
