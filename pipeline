@@ -25,7 +25,7 @@ pipeline {
             post {
                 always {
                     // Archive the logs to ensure they can be attached
-                    archiveArtifacts artifacts: '**/target/*.log', allowEmptyArchive: true
+                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
                     // Send email notification with the test results
                     emailext (
                         to: "${EMAIL_RECIPIENT}",
@@ -45,7 +45,7 @@ pipeline {
             post {
                 always {
                     // Archive the logs to ensure they can be attached
-                    archiveArtifacts artifacts: '**/target/*.log', allowEmptyArchive: true
+                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
                     // Send email notification with the code quality check results
                     emailext (
                         to: "${EMAIL_RECIPIENT}",
