@@ -10,8 +10,8 @@ pipeline {
             steps {
                 echo 'Building the application...'
                 script {
-                    // Use Maven to build the application
-                    sh 'mvn clean package'
+                    // Build the application using a custom build script or command
+                    sh './build.sh'
                 }
             }
         }
@@ -20,8 +20,8 @@ pipeline {
             steps {
                 echo 'Running unit and integration tests...'
                 script {
-                    // Use Maven to run tests
-                    sh 'mvn test'
+                    // Run unit and integration tests using a custom test script or command
+                    sh './run_tests.sh'
                 }
             }
             post {
@@ -42,10 +42,9 @@ pipeline {
             steps {
                 echo 'Performing code analysis...'
                 script {
-                    // Run SonarQube analysis
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar'
-                    }
+                    // Run code analysis using a custom script or tool
+                    // Example: Run ESLint for a JavaScript project
+                    sh './run_code_analysis.sh'
                 }
             }
         }
@@ -54,8 +53,9 @@ pipeline {
             steps {
                 echo 'Performing security scan...'
                 script {
-                    // Run OWASP Dependency-Check
-                    sh 'mvn org.owasp:dependency-check-maven:check'
+                    // Run security scan using a custom script or tool
+                    // Example: Run a security scan with a tool like OWASP ZAP
+                    sh './run_security_scan.sh'
                 }
             }
             post {
@@ -91,8 +91,9 @@ pipeline {
             steps {
                 echo 'Running integration tests on staging...'
                 script {
-                    // Run Selenium tests
-                    sh 'mvn verify -P selenium'
+                    // Run integration tests using a custom script or tool
+                    // Example: Run Selenium tests
+                    sh './run_integration_tests.sh'
                 }
             }
         }
